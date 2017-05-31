@@ -33,7 +33,7 @@ public class KinesisSpoutConfig implements Serializable {
     // Backoff time between Kinesis GetRecords API calls (per shard) when a call returns an empty list of records.
     private long emptyRecordListBackoffMillis = 500L;
     private int recordRetryLimit = 3;
-    private Regions region = Regions.US_EAST_1;
+    private Regions region = Regions.US_WEST_2;
 
     private final String zookeeperConnectionString;
     private String zookeeperPrefix = "kinesis_storm_spout";
