@@ -98,6 +98,8 @@ class KinesisShardGetter implements IShardGetter {
             // We'll treat this equivalent to fetching 0 records - the spout drives the retry as part of nextTuple()
             // We don't sleep here - we can continue processing ack/fail on the spout thread.
             LOG.error(this + "Caught exception when fetching records for " + shardId, e);
+        } catch (Throwable t) {
+            LOG.error(this + "XXXXXXXX Caught exception when fetching records for " + shardId, t);
         }
 
         return new Records(records.build(), shardIterator == null);
