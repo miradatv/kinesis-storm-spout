@@ -29,6 +29,7 @@ public class KinesisSpoutConfig implements Serializable {
     private final String streamName;
     private int maxRecordsPerCall = 10000;
     private InitialPositionInStream initialPositionInStream = InitialPositionInStream.LATEST;
+    private boolean forceInitialPositionInStream = false;
     private int checkpointIntervalMillis = 60000;
     // Backoff time between Kinesis GetRecords API calls (per shard) when a call returns an empty list of records.
     private long emptyRecordListBackoffMillis = 500L;
@@ -55,6 +56,7 @@ public class KinesisSpoutConfig implements Serializable {
      * @param streamName Name of the Kinesis stream.
      * @param maxRecordsPerCall Max number records to fetch from Kinesis in a single GetRecords call
      * @param initialPositionInStream Fetch records from this position if a checkpoint doesn't exist
+     * @param forceInitialPositionInStream Forces fetching records from initialPositionStream ignoring the checkpoints
      * @param zookeeperPrefix Prefix for Zookeeper paths when storing spout state.
      * @param zookeeperConnectionString Endpoint for connecting to ZooKeeper (e.g. "localhost:2181").
      * @param zookeeperSessionTimeoutMillis Timeout for ZK session.
@@ -64,6 +66,7 @@ public class KinesisSpoutConfig implements Serializable {
     public KinesisSpoutConfig(final String streamName,
             final int maxRecordsPerCall,
             final InitialPositionInStream initialPositionInStream,
+            final boolean forceInitialPositionInStream,
             final String zookeeperPrefix,
             final String zookeeperConnectionString,
             final int zookeeperSessionTimeoutMillis,
@@ -74,6 +77,7 @@ public class KinesisSpoutConfig implements Serializable {
         checkValueIsPositive(maxRecordsPerCall, "maxRecordsPerCall");
         this.maxRecordsPerCall = maxRecordsPerCall;
         this.initialPositionInStream = initialPositionInStream;
+        this.forceInitialPositionInStream = forceInitialPositionInStream;
         this.zookeeperPrefix = zookeeperPrefix;
         this.zookeeperConnectionString = zookeeperConnectionString;
         checkValueIsPositive(zookeeperSessionTimeoutMillis, "zookeeperSessionTimeoutMillis");
@@ -207,6 +211,22 @@ public class KinesisSpoutConfig implements Serializable {
      */
     public KinesisSpoutConfig withInitialPositionInStream(InitialPositionInStream initialPosition) {
         this.initialPositionInStream = initialPosition;
+        return this;
+    }
+
+    /**
+     * @return the value of forceInitialPositionInStream
+     */
+    public boolean isForceInitialPostionInStream() {
+        return forceInitialPositionInStream;
+    }
+
+    /**
+     * @param forceInitialPositionInStream Forces fetching records from initialPositionStream ignoring the checkpoints
+     * @return KinesisSpoutConfig
+     */
+    public KinesisSpoutConfig withForceInitialPositionInStream(boolean forceInitialPosition) {
+        this.forceInitialPositionInStream = forceInitialPosition;
         return this;
     }
 

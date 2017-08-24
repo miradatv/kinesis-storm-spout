@@ -325,13 +325,14 @@ public class ZookeeperStateManager implements Watcher, IKinesisSpoutStateManager
         Map<String, LocalShardState> state = new HashMap<>();
 
         for (final String shardId : shardAssignment) {
-            String latestValidSeqNum;
+            String latestValidSeqNum = "";
             try {
-                latestValidSeqNum = zk.getLastCommittedSeqNum(shardId);
+                if (!config.isForceInitialPostionInStream()) {
+                    latestValidSeqNum = zk.getLastCommittedSeqNum(shardId);
+                }
             } catch (Exception e) {
                 LOG.error(this + " could not retrieve last committed seqnum for " + shardId
                           + " from ZooKeeper. Starting from default getter position.");
-                latestValidSeqNum = "";
             }
             state.put(shardId, new LocalShardState(shardId, latestValidSeqNum, config.getRecordRetryLimit()));
         }
