@@ -78,12 +78,14 @@ public class KinesisSpout implements IRichSpout, Serializable {
                         clientConfiguration,
                         config.getRegion());
         this.shardListGetter = helper;
+        this.initialPosition = config.getInitialPositionInStream();
         this.getterBuilder =
                 new KinesisShardGetterBuilder(config.getStreamName(),
                         helper,
                         config.getMaxRecordsPerCall(),
-                        config.getEmptyRecordListBackoffMillis());
-        this.initialPosition = config.getInitialPositionInStream();
+                        config.getEmptyRecordListBackoffMillis(),
+                        this.initialPosition);
+        
     }
 
     /**

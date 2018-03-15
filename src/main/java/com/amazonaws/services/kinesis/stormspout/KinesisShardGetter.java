@@ -38,6 +38,7 @@ import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.amazonaws.services.kinesis.stormspout.exceptions.InvalidSeekPositionException;
 import com.amazonaws.services.kinesis.stormspout.exceptions.KinesisSpoutException;
 import com.amazonaws.services.kinesis.stormspout.utils.InfiniteConstantBackoffRetry;
+import com.amazonaws.services.kinesis.stormspout.InitialPositionInStream;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -51,6 +52,7 @@ class KinesisShardGetter implements IShardGetter {
     private final String streamName;
     private final String shardId;
     private final AmazonKinesisClient kinesisClient;
+    private final InitialPositionInStream initialPosition;
 
     private String shardIterator;
     private ShardPosition positionInShard;
@@ -60,12 +62,13 @@ class KinesisShardGetter implements IShardGetter {
      * @param shardId Fetch data from this shard
      * @param kinesisClient Kinesis client to use when making requests.
      */
-    KinesisShardGetter(final String streamName, final String shardId, final AmazonKinesisClient kinesisClient) {
+    KinesisShardGetter(final String streamName, final String shardId, final AmazonKinesisClient kinesisClient, final InitialPositionInStream initialPosition) {
         this.streamName = streamName;
         this.shardId = shardId;
         this.kinesisClient = kinesisClient;
         this.shardIterator = "";
         this.positionInShard = ShardPosition.end();
+        this.initialPosition = initialPosition;
     }
 
     @Override
@@ -108,28 +111,33 @@ class KinesisShardGetter implements IShardGetter {
     @Override
     public void seek(ShardPosition position)
         throws AmazonClientException, ResourceNotFoundException, InvalidSeekPositionException {
-        LOG.info("Seeking to " + position);
+        LOG.info("Seeking to " + position + ", type:" + initialPosition);
 
         ShardIteratorType iteratorType;
         String seqNum = null;
-        switch (position.getPosition()) {
-            case TRIM_HORIZON:
-                iteratorType = ShardIteratorType.TRIM_HORIZON;
-                break;
-            case LATEST:
-                iteratorType = ShardIteratorType.LATEST;
-                break;
-            case AT_SEQUENCE_NUMBER:
-                iteratorType = ShardIteratorType.AT_SEQUENCE_NUMBER;
-                seqNum = position.getSequenceNum();
-                break;
-            case AFTER_SEQUENCE_NUMBER:
-                iteratorType = ShardIteratorType.AFTER_SEQUENCE_NUMBER;
-                seqNum = position.getSequenceNum();
-                break;
-            default:
-                LOG.error("Invalid seek position " + position);
-                throw new InvalidSeekPositionException(position);
+        
+        if (initialPosition == InitialPositionInStream.LATEST) {
+        	iteratorType = ShardIteratorType.LATEST;
+        } else {
+	        switch (position.getPosition()) {
+	            case TRIM_HORIZON:
+	                iteratorType = ShardIteratorType.TRIM_HORIZON;
+	                break;
+	            case LATEST:
+	                iteratorType = ShardIteratorType.LATEST;
+	                break;
+	            case AT_SEQUENCE_NUMBER:
+	                iteratorType = ShardIteratorType.AT_SEQUENCE_NUMBER;
+	                seqNum = position.getSequenceNum();
+	                break;
+	            case AFTER_SEQUENCE_NUMBER:
+	                iteratorType = ShardIteratorType.AFTER_SEQUENCE_NUMBER;
+	                seqNum = position.getSequenceNum();
+	                break;
+	            default:
+	                LOG.error("Invalid seek position " + position);
+	                throw new InvalidSeekPositionException(position);
+	        }
         }
 
         try {

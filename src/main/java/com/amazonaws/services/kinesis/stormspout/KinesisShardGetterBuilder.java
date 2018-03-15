@@ -16,6 +16,7 @@
 package com.amazonaws.services.kinesis.stormspout;
 
 import com.google.common.collect.ImmutableList;
+import com.amazonaws.services.kinesis.stormspout.InitialPositionInStream;
 
 /**
  * Builds KinesisShardGetters.
@@ -25,6 +26,7 @@ class KinesisShardGetterBuilder implements IShardGetterBuilder {
 
     private final int maxRecordsPerCall;
     private final long emptyRecordListBackoffMillis;
+    private final InitialPositionInStream initialPosition;
 
     private final String streamName;
     private final KinesisHelper helper;
@@ -38,11 +40,13 @@ class KinesisShardGetterBuilder implements IShardGetterBuilder {
     public KinesisShardGetterBuilder(final String streamName,
             final KinesisHelper helper,
             final int maxRecordsPerCall,
-            final long emptyRecordListBackoffMillis) {
+            final long emptyRecordListBackoffMillis,
+            final InitialPositionInStream initialPosition) {
         this.streamName = streamName;
         this.helper = helper;
         this.maxRecordsPerCall = maxRecordsPerCall;
         this.emptyRecordListBackoffMillis = emptyRecordListBackoffMillis;
+        this.initialPosition = initialPosition;
     }
 
     @Override
@@ -50,7 +54,7 @@ class KinesisShardGetterBuilder implements IShardGetterBuilder {
         ImmutableList.Builder<IShardGetter> builder = new ImmutableList.Builder<>();
 
         for (String shard : shardAssignment) {
-            builder.add(new BufferedGetter(new KinesisShardGetter(streamName, shard, helper.getSharedkinesisClient()),
+            builder.add(new BufferedGetter(new KinesisShardGetter(streamName, shard, helper.getSharedkinesisClient(), initialPosition),
                     maxRecordsPerCall,
                     emptyRecordListBackoffMillis));
         }
