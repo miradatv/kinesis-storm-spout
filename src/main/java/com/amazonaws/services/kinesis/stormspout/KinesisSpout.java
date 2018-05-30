@@ -53,6 +53,9 @@ public class KinesisSpout implements IRichSpout, Serializable {
     private final IShardListGetter shardListGetter;
     private final IShardGetterBuilder getterBuilder;
     private long emptyRecordListSleepTimeMillis = 5L;
+    private long nextTupleSleepTimeMillis = 10L;
+    private long maxTimeTupleSleep=60*1000;
+    private long millis = -1;
 
     // Initialized on open
     private transient SpoutOutputCollector collector;
@@ -149,6 +152,9 @@ public class KinesisSpout implements IRichSpout, Serializable {
     @Override
     public void nextTuple() {
         synchronized (stateManager) {
+        	if (millis == -1) {
+        		millis = System.currentTimeMillis();
+        	}
             // Task has no assignments.
             if (!stateManager.hasGetters()) {
                 // Sleep here for a bit, so we don't consume too much cpu.
@@ -158,6 +164,17 @@ public class KinesisSpout implements IRichSpout, Serializable {
                     LOG.debug(this + " sleep was interrupted.");
                 }
                 return;
+            } else {
+            	long now = System.currentTimeMillis();
+            	if ((now-millis) > maxTimeTupleSleep) {
+            		millis = now;
+	                // Sleep here for a bit, so we don't consume too much cpu.
+	                try {
+	                    Thread.sleep(nextTupleSleepTimeMillis);
+	                } catch (InterruptedException e) {
+	                    LOG.debug(this + " sleep was interrupted.");
+	                }
+            	}
             }
 
             final IShardGetter getter = stateManager.getNextGetter();

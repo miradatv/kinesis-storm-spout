@@ -38,7 +38,7 @@ public class KinesisSpoutConfig implements Serializable {
 
     private final String zookeeperConnectionString;
     private String zookeeperPrefix = "kinesis_storm_spout";
-    private int zookeeperSessionTimeoutMillis = 10000;
+    private int zookeeperSessionTimeoutMillis = 120000;
 
     private IKinesisRecordScheme scheme = new DefaultKinesisRecordScheme();
 
