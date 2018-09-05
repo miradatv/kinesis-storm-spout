@@ -45,7 +45,7 @@ class KinesisHelper implements IShardListGetter {
     private static final ShardIdComparator SHARD_ID_COMPARATOR = new ShardIdComparator();
     private static final Integer DESCRIBE_STREAM_LIMIT = 1000;
     private static final String KINESIS_STORM_SPOUT_USER_AGENT = "kinesis-storm-spout-java-1.1.1";
-    private static final long BACKOFF_MILLIS = 1000L;
+    private static final long BACKOFF_MILLIS = 5000L;
 
     private final byte[] serializedKinesisCredsProvider;
     private final byte[] serializedkinesisClientConfig;
