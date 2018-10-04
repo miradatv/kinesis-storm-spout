@@ -239,6 +239,7 @@ public class KinesisSpout implements IRichSpout, Serializable {
         Record duplicate = new Record();
         duplicate.setPartitionKey(record.getPartitionKey());
         duplicate.setSequenceNumber(record.getSequenceNumber());
+        duplicate.setApproximateArrivalTimestamp(record.getApproximateArrivalTimestamp());
         duplicate.setData(record.getData().duplicate());
         return duplicate;
     }
