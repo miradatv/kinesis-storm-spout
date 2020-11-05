@@ -6,7 +6,7 @@
     <artifactId>kinesis-storm-spout</artifactId>
     <packaging>jar</packaging>
     <name>Amazon Kinesis Storm Spout for Java</name>
-    <version>1.1.1-PATCHED</version>
+    <version>1.2.3-PATCHED</version>
     <description> The Amazon Kinesis Storm Spout helps Java developers integrate Amazon Kinesis with Storm.</description>
     <url>https://aws.amazon.com/kinesis</url>
 
@@ -25,7 +25,7 @@
 
     <properties>
         <aws-java-sdk.version>1.10.30</aws-java-sdk.version>
-        <storm.version>1.0.5</storm.version>
+        <storm.version>1.2.3</storm.version>
         <curator-framework.version>1.1.3</curator-framework.version>
         <guava.version>13.0-final</guava.version>
         <commons-lang3.version>3.8.1</commons-lang3.version>
