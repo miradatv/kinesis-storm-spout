@@ -98,9 +98,8 @@ class KinesisShardGetter implements IShardGetter {
 
             shardIterator = result.getNextShardIterator();
         } catch (ProvisionedThroughputExceededException e) {
-            // We'll treat this equivalent to fetching 0 records - the spout drives the retry as part of nextTuple()
-            // We don't sleep here - we can continue processing ack/fail on the spout thread.
-            LOG.error(this + "Caught ProvisionedThroughputExceededException exception when fetching records for " + shardId, e);
+            // It can not read more than this
+            LOG.info(this + " Caught ProvisionedThroughputExceededException exception when fetching records for " + shardId);
         } catch (AmazonClientException e) {
             // We'll treat this equivalent to fetching 0 records - the spout drives the retry as part of nextTuple()
             // We don't sleep here - we can continue processing ack/fail on the spout thread.
