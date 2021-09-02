@@ -18,6 +18,8 @@ package com.amazonaws.services.kinesis.stormspout;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -35,7 +37,10 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.stormspout.state.IKinesisSpoutStateManager;
 import com.amazonaws.services.kinesis.stormspout.state.zookeeper.ZookeeperStateManager;
+import com.amazonaws.services.kinesis.stormspout.state.zookeeper.StatsLogger;
 import com.google.common.collect.ImmutableList;
+
+
 
 /**
  * Storm spout for Amazon Kinesis. The spout fetches data from Kinesis and emits a tuple for each data record.
@@ -52,6 +57,7 @@ public class KinesisSpout implements IRichSpout, Serializable {
     private final KinesisSpoutConfig config;
     private final IShardListGetter shardListGetter;
     private final IShardGetterBuilder getterBuilder;
+    private StatsLogger stats;
     private long emptyRecordListSleepTimeMillis = 5L;
     private long nextTupleSleepTimeMillis = 10L;
     private long maxTimeTupleSleep=60*1000;
@@ -114,6 +120,7 @@ public class KinesisSpout implements IRichSpout, Serializable {
         this.context = spoutContext;
         this.collector = spoutCollector;
         this.stateManager = new ZookeeperStateManager(config, shardListGetter, getterBuilder, initialPosition);
+        this.stats = StatsLogger.getInstance(this.config);
         LOG.info(this + " open() called with topoConfig task index " + spoutContext.getThisTaskIndex()
                 + " for processing stream " + config.getStreamName());
     }
@@ -151,7 +158,16 @@ public class KinesisSpout implements IRichSpout, Serializable {
 
     @Override
     public void nextTuple() {
+        if (this.stats != null) {
+            this.stats.replaceStats("lastNextTupleCallTime", new Long(System.currentTimeMillis()));
+            this.stats.replaceStats("lastNextTupleCallDate", new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS").format(new Date()));
+        }
         synchronized (stateManager) {
+            if (this.stats != null) {
+                this.stats.replaceStats("lastNextTupleCallTimeAfterSynchronized", new Long(System.currentTimeMillis()));
+                this.stats.replaceStats("lastNextTupleCallTimeAfterSynchronized", new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS").format(new Date()));
+            }
+            
         	if (millis == -1) {
         		millis = System.currentTimeMillis();
         	}
@@ -189,6 +205,9 @@ public class KinesisSpout implements IRichSpout, Serializable {
                             + rec.getSequenceNumber());
                 }
                 isRetry = true;
+                if (this.stats != null) {
+                    this.stats.incStats("shardId_"+currentShardId+"_retried");
+                }
             } else {
                 final ImmutableList<Record> records = getter.getNext(1).getRecords();
                 if ((records != null) && (!records.isEmpty())) {
@@ -207,6 +226,9 @@ public class KinesisSpout implements IRichSpout, Serializable {
 
                 collector.emit(tuple, MessageIdUtil.constructMessageId(currentShardId, recordToEmit.getSequenceNumber()));
                 stateManager.emit(currentShardId, recordToEmit, isRetry);
+                if (this.stats != null) {
+                    this.stats.incStats("shardId_"+currentShardId+"_pending");
+                }
             } else {
                 // Sleep here for a bit if there were no records to emit.
                 try {
@@ -222,6 +244,11 @@ public class KinesisSpout implements IRichSpout, Serializable {
 
                 stateManager.commitShardStates();
                 lastCommitTime = System.currentTimeMillis();
+
+                if (this.stats != null) {
+                    this.stats.replaceStats("lastZKCommitTime", new Long(lastCommitTime));
+                    this.stats.replaceStats("lastZKCommitDate", new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS").format(new Date()));
+                }
             } else {
                 LOG.debug(this + " Not committing to ZooKeeper.");
             }
@@ -254,6 +281,10 @@ public class KinesisSpout implements IRichSpout, Serializable {
                 LOG.debug(this + " Processing ack() for " + msgId + ", shardId " + shardId + " seqNum " + seqNum);
             }
             stateManager.ack(shardId, seqNum);
+            if (this.stats != null) {
+                this.stats.decStats("shardId_"+shardId+"_pending");
+                this.stats.incStats("shardId_"+shardId+"_acked");
+            }
         }
     }
 
@@ -265,6 +296,9 @@ public class KinesisSpout implements IRichSpout, Serializable {
             final String shardId = MessageIdUtil.shardIdOfMessageId((String) msgId);
             LOG.info(this + " Processing failed: " + shardId + ", seqNum " + seqNum);
             stateManager.fail(shardId, seqNum);
+            if (this.stats != null) {
+                this.stats.incStats("shardId_"+shardId+"_failed");
+            }
         }
     }
 
