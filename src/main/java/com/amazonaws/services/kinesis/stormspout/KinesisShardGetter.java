@@ -181,6 +181,7 @@ class KinesisShardGetter implements IShardGetter {
 
         return new InfiniteConstantBackoffRetry<String>(BACKOFF_MILLIS,
                 AmazonClientException.class,
+                shardId,
                 new Callable<String>() {
                     @Override
                     public String call() throws Exception {

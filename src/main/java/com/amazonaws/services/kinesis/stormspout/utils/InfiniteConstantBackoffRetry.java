@@ -31,6 +31,22 @@ public class InfiniteConstantBackoffRetry<T> implements Callable<T> {
     private final long backoffMillis;
     private final Class<? extends Exception> retryOn;
     private final Callable<T> f;
+    private final String shardId;
+
+    /** Constructor.
+     * @param backoffMillis Backoff time
+     * @param retryOn Exception we should retry on.
+     * @param f Callable (function) we should call/retry
+     */
+    public InfiniteConstantBackoffRetry(final long backoffMillis,
+            final Class<? extends Exception> retryOn,
+            final String shardId,
+            final Callable<T> f) {
+        this.backoffMillis = backoffMillis;
+        this.retryOn = retryOn;
+        this.f = f;
+        this.shardId=shardId;
+    }
 
     /** Constructor.
      * @param backoffMillis Backoff time
@@ -43,6 +59,7 @@ public class InfiniteConstantBackoffRetry<T> implements Callable<T> {
         this.backoffMillis = backoffMillis;
         this.retryOn = retryOn;
         this.f = f;
+        this.shardId=null;
     }
 
     @Override
@@ -59,6 +76,9 @@ public class InfiniteConstantBackoffRetry<T> implements Callable<T> {
     private T checkedCall() throws Exception {
         while (true) {
             try {
+                if (shardId != null) {
+                    LOG.debug("Trying to seek for shardId:"+shardId);
+                }
                 return f.call();
             } catch (Exception e) {
             	LOG.error("Exception:"+e);
