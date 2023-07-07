@@ -44,6 +44,8 @@ public class KinesisSpoutConfig implements Serializable {
 
     // Gets set by the spout later on.
     private String topologyName = "UNNAMED_TOPOLOGY";
+    private boolean usePersistentShardListOnStart = false;
+    private boolean clearPersistentShardListOnExit = true;
 
     public KinesisSpoutConfig(final String streamName, final String zookeeperConnectionString) {
         this.streamName = streamName;
@@ -53,6 +55,49 @@ public class KinesisSpoutConfig implements Serializable {
     /**
      * Constructor.
      * 
+     * @param streamName Name of the Kinesis stream.
+     * @param maxRecordsPerCall Max number records to fetch from Kinesis in a single GetRecords call
+     * @param initialPositionInStream Fetch records from this position if a checkpoint doesn't exist
+     * @param forceInitialPositionInStream Forces fetching records from initialPositionStream ignoring the checkpoints
+     * @param zookeeperPrefix Prefix for Zookeeper paths when storing spout state.
+     * @param zookeeperConnectionString Endpoint for connecting to ZooKeeper (e.g. "localhost:2181").
+     * @param zookeeperSessionTimeoutMillis Timeout for ZK session.
+     * @param checkpointIntervalMillis Save checkpoint to Zookeeper this often.
+     * @param usePersistentShardListOnStart Indicates if it must use the persisteng shard list or load them from Kinesis (false value)
+     * @param clearPersistentShardListOnExit Indicates if the persisted shard list must deleted on exit
+     * @param scheme Used to convert a Kinesis record into a tuple
+     */
+    public KinesisSpoutConfig(final String streamName,
+            final int maxRecordsPerCall,
+            final InitialPositionInStream initialPositionInStream,
+            final boolean forceInitialPositionInStream,
+            final String zookeeperPrefix,
+            final String zookeeperConnectionString,
+            final int zookeeperSessionTimeoutMillis,
+            final int checkpointIntervalMillis,
+            final boolean usePersistentShardListOnStart,
+            final boolean clearPersistentShardListOnExit,
+            final IKinesisRecordScheme scheme) {
+        this.scheme = scheme;
+        this.usePersistentShardListOnStart = usePersistentShardListOnStart;
+        this.clearPersistentShardListOnExit = clearPersistentShardListOnExit;
+        this.streamName = streamName;
+        checkValueIsPositive(maxRecordsPerCall, "maxRecordsPerCall");
+        this.maxRecordsPerCall = maxRecordsPerCall;
+        this.initialPositionInStream = initialPositionInStream;
+        this.forceInitialPositionInStream = forceInitialPositionInStream;
+        this.zookeeperPrefix = zookeeperPrefix;
+        this.zookeeperConnectionString = zookeeperConnectionString;
+        checkValueIsPositive(zookeeperSessionTimeoutMillis, "zookeeperSessionTimeoutMillis");
+        this.zookeeperSessionTimeoutMillis = zookeeperSessionTimeoutMillis;
+        checkValueIsPositive(checkpointIntervalMillis, "checkpointIntervalMillis");
+        this.checkpointIntervalMillis = checkpointIntervalMillis;
+    }
+
+
+    /**
+     * Constructor.
+     *
      * @param streamName Name of the Kinesis stream.
      * @param maxRecordsPerCall Max number records to fetch from Kinesis in a single GetRecords call
      * @param initialPositionInStream Fetch records from this position if a checkpoint doesn't exist
@@ -73,6 +118,8 @@ public class KinesisSpoutConfig implements Serializable {
             final int checkpointIntervalMillis,
             final IKinesisRecordScheme scheme) {
         this.scheme = scheme;
+        this.usePersistentShardListOnStart = false;
+        this.clearPersistentShardListOnExit = true;
         this.streamName = streamName;
         checkValueIsPositive(maxRecordsPerCall, "maxRecordsPerCall");
         this.maxRecordsPerCall = maxRecordsPerCall;
@@ -166,6 +213,37 @@ public class KinesisSpoutConfig implements Serializable {
     public int getCheckpointIntervalMillis() {
         return checkpointIntervalMillis;
     }
+
+    /**
+    * @return Boolean indicated if it must use shards defined in zookeeper or read them dynamically from Kinesis (false value)
+    */
+    public boolean getUsePersistentShardListOnStart() {
+        return usePersistentShardListOnStart;
+    }
+
+    public boolean getClearPersistentShardListOnExit() {
+        return clearPersistentShardListOnExit;
+    }
+
+    /**
+     * @param usePersistentShardListOnStart Indicates if persistent shard list must be used on start or loaded dynamically from Kinesis
+     * @return KinesisSpoutConfig
+     */
+    public KinesisSpoutConfig withUsePersistentShardListOnStart(boolean usePersistentShardListOnStart) {
+        this.usePersistentShardListOnStart = usePersistentShardListOnStart;
+        return this;
+    }
+
+    /**
+     * @param clearPersistentShardListOnExit Indicates if persisted shard list must be clear on exit
+     * @return KinesisSpoutConfig
+     */
+    public KinesisSpoutConfig withClearPersistentShardListOnExit(boolean clearPersistentShardListOnExit) {
+        this.clearPersistentShardListOnExit = clearPersistentShardListOnExit;
+        return this;
+    }
+
+
 
     /**
      * @param checkpointIntervalMillis Save checkpoint to Zookeeper this often.

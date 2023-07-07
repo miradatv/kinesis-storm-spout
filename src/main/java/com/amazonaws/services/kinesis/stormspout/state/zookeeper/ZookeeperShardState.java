@@ -127,6 +127,7 @@ class ZookeeperShardState {
         ObjectMapper objectMapper = new ObjectMapper();
         byte[] data = objectMapper.writeValueAsBytes(new ShardStateV0(seqNum));
         NodeFunction commit = NodeFunction.constant(data);
+        LOG.debug("Trying to save to ZK shard checkpoint for shard:"+shardId);
         atomicUpdate(shardId + "/" + STATE_SUFFIX, commit);
     }
 

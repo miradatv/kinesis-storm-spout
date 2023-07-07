@@ -108,7 +108,11 @@ public class ZookeeperStateManager implements Watcher, IKinesisSpoutStateManager
         ImmutableList<String> shardList = ImmutableList.copyOf(shardListGetter.getShardList().keySet());
         LOG.info(this + "Activating with shardList " + shardList);
         try {
-            zk.initialize(shardList);
+            LOG.info("SPOUT CONFIGURATION, use persistent shard list is:"+config.getUsePersistentShardListOnStart());
+            if (!config.getUsePersistentShardListOnStart()) {
+                LOG.info("SPOUT CONFIGURATION, initializing persistent shard list");
+                zk.initialize(shardList);
+            }
             // Hook shardList watcher for the first time.
             zk.watchShardList(this);
         } catch (Exception e) {
@@ -127,7 +131,11 @@ public class ZookeeperStateManager implements Watcher, IKinesisSpoutStateManager
 
         this.active = false;
         try {
-            zk.clearShardList();
+            LOG.info("SPOUT CONFIGURATION, config.getClearPersistentShardListOnExit is:"+config.getClearPersistentShardListOnExit());
+            if (config.getClearPersistentShardListOnExit()) {
+                LOG.info("SPOUT CONFIGURATION, clearing persistent shard list");
+                zk.clearShardList();
+            }
         } catch (Exception e) {
             LOG.error(this + " something went wrong while clearing Zookeeper shard list.", e);
         }
