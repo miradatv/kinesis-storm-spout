@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +49,9 @@ class KinesisHelper implements IShardListGetter {
     private static final String KINESIS_STORM_SPOUT_USER_AGENT = "kinesis-storm-spout-java-1.1.1";
     private static final long BACKOFF_MILLIS = 5000L;
 
-    private final byte[] serializedKinesisCredsProvider;
     private final byte[] serializedkinesisClientConfig;
-    private final byte[] serializedRegion;
     private final String streamName;
+    private final String regionString;
 
     private transient AWSCredentialsProvider kinesisCredsProvider;
     private transient ClientConfiguration kinesisClientConfig;
@@ -66,10 +67,10 @@ class KinesisHelper implements IShardListGetter {
             final AWSCredentialsProvider kinesisCredsProvider,
             final ClientConfiguration kinesisClientConfig,
             final Region region) {
+
         this.streamName = streamName;
-        this.serializedKinesisCredsProvider = SerializationHelper.kryoSerializeObject(kinesisCredsProvider);
+        this.regionString = region.toString();
         this.serializedkinesisClientConfig = SerializationHelper.kryoSerializeObject(kinesisClientConfig);
-        this.serializedRegion = SerializationHelper.kryoSerializeObject(region);
 
         this.kinesisCredsProvider = null;
         this.kinesisClientConfig = null;
@@ -134,9 +135,9 @@ class KinesisHelper implements IShardListGetter {
 
     private AWSCredentialsProvider getKinesisCredsProvider() {
         if (kinesisCredsProvider == null) {
-            kinesisCredsProvider =
-                    (AWSCredentialsProvider) SerializationHelper.kryoDeserializeObject(serializedKinesisCredsProvider);
+            kinesisCredsProvider = new ProfileCredentialsProvider("default");
         }
+
         return kinesisCredsProvider;
     }
 
@@ -152,10 +153,9 @@ class KinesisHelper implements IShardListGetter {
         }
         return kinesisClientConfig;
     }
-
     private Region getRegion() {
         if (region == null) {
-            region = (Region) SerializationHelper.kryoDeserializeObject(serializedRegion);
+            region = Region.getRegion(Regions.fromName(this.regionString));
         }
         return region;
     }
