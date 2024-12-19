@@ -24,7 +24,7 @@
 
 
     <properties>
-        <aws-java-sdk.version>1.10.50</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.132</aws-java-sdk.version>
         <storm.version>1.0.5</storm.version>
         <curator-framework.version>1.1.16</curator-framework.version>
         <guava.version>13.0-final</guava.version>
